@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Instagram Takip Kontrol</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+    <h1>Instagram Takip Kontrol</h1>
+    <p>Instagram JSON dosyalarını yükleyerek seni takip etmeyenleri bul.</p>
+
+    <div class="upload-box">
+      <label>Takipçilerin dosyası: followers_1.json</label>
+      <input type="file" id="followersFile" accept=".json" />
+    </div>
+
+    <div class="upload-box">
+      <label>Takip ettiklerin dosyası: following.json</label>
+      <input type="file" id="followingFile" accept=".json" />
+    </div>
+
+    <button id="compareBtn">Karşılaştır</button>
+
+    <div id="result">
+      <h2>Sonuçlar</h2>
+      <p id="countText">Henüz dosya yüklenmedi.</p>
+      <ul id="resultList"></ul>
+    </div>
+  </div>
+
+  <script src="./JS/script.js"></script>
+</body>
+</html>
