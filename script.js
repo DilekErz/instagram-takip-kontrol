@@ -1,7 +1,9 @@
 const followersInput = document.getElementById("followersFile");
 const followingInput = document.getElementById("followingFile");
 const compareBtn = document.getElementById("compareBtn");
-const results = document.getElementById("results");
+
+const countText = document.getElementById("countText");
+const resultList = document.getElementById("resultList");
 
 function readJsonFile(file) {
   return new Promise((resolve, reject) => {
@@ -31,9 +33,10 @@ compareBtn.addEventListener("click", async () => {
   const followingFile = followingInput.files[0];
 
   if (!followersFile || !followingFile) {
-    results.innerHTML = "Lütfen iki dosyayı da yükle.";
-    return;
-  }
+  countText.textContent = "Lütfen iki dosyayı da yükle.";
+  resultList.innerHTML = "";
+  return;
+}
 
   const followersData = await readJsonFile(followersFile);
   const followingData = await readJsonFile(followingFile);
@@ -43,10 +46,9 @@ compareBtn.addEventListener("click", async () => {
 
   const notFollowingBack = following.filter(user => !followers.includes(user));
 
-  results.innerHTML = `
-    <p><strong>Seni takip etmeyen kişi sayısı:</strong> ${notFollowingBack.length}</p>
-    <ul>
-      ${notFollowingBack.map(user => `<li>${user}</li>`).join("")}
-    </ul>
-  `;
+countText.innerHTML = `<strong>Seni takip etmeyen kişi sayısı:</strong> ${notFollowingBack.length}`;
+
+resultList.innerHTML = notFollowingBack
+  .map(user => `<li>${user}</li>`)
+  .join("");
 });
