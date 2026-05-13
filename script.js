@@ -9,11 +9,10 @@ function readJsonFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = function (event) {
+    reader.onload = (event) => {
       try {
-        const data = JSON.parse(event.target.result);
-        resolve(data);
-      } catch (error) {
+        resolve(JSON.parse(event.target.result));
+      } catch {
         reject("JSON dosyası okunamadı.");
       }
     };
@@ -22,21 +21,49 @@ function readJsonFile(file) {
   });
 }
 
-function extractUsernames(data) {
-    return data.map(item => {
-    const info = item.string_list_data[0];
+function getUsername(item) {
+  const info = item.string_list_data?.[0];
 
-    if (info.value) {
-      return info.value.toLowerCase();
-    }
+  if (!info) return null;
 
-    if (info.href) {
-      return info.href
-        .replace("https://www.instagram.com/", "")
-        .replace("/", "")
-        .toLowerCase();
-    }
-  });
+  let username = info.value || info.href || "";
+
+  username = username
+    .replace("https://www.instagram.com/", "")
+    .replace("http://www.instagram.com/", "")
+    .replace("www.instagram.com/", "")
+    .split("?")[0]
+    .replaceAll("/", "")
+    .trim()
+    .toLowerCase();
+
+ username = username.replace(/^_u/, "");
+
+  return username || null;
+}
+
+function extractFollowers(data) {
+  if (Array.isArray(data)) {
+    return data.map(getUsername).filter(Boolean);
+  }
+
+  if (data.relationships_followers) {
+    return data.relationships_followers.map(getUsername).filter(Boolean);
+  }
+
+  return [];
+}
+
+function extractFollowing(data) {
+  if (data.relationships_following) {
+    return data.relationships_following.map(getUsername).filter(Boolean);
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(getUsername).filter(Boolean);
+  }
+
+  return [];
 }
 
 compareBtn.addEventListener("click", async () => {
@@ -44,22 +71,40 @@ compareBtn.addEventListener("click", async () => {
   const followingFile = followingInput.files[0];
 
   if (!followersFile || !followingFile) {
-  countText.textContent = "Lütfen iki dosyayı da yükle.";
-  resultList.innerHTML = "";
-  return;
-}
+    countText.textContent = "Lütfen iki dosyayı da yükle.";
+    resultList.innerHTML = "";
+    return;
+  }
 
-  const followersData = await readJsonFile(followersFile);
-  const followingData = await readJsonFile(followingFile);
+  try {
+    const followersData = await readJsonFile(followersFile);
+    const followingData = await readJsonFile(followingFile);
 
-  const followers = extractUsernames(followersData);
-  const following = extractUsernames(followingData.relationships_following);
+    const followers = extractFollowers(followersData);
+    const following = extractFollowing(followingData);
 
- const notFollowingBack = following.filter(user => user && !followers.includes(user));
+    const notFollowingBack = following.filter(
+      user => !followers.includes(user)
+    );
 
-countText.innerHTML = `<strong>Seni takip etmeyen kişi sayısı:</strong> ${notFollowingBack.length}`;
+    countText.innerHTML = `
+      <strong>Takipçi dosyasındaki kişi sayısı:</strong> ${followers.length}<br>
+      <strong>Takip edilen dosyasındaki kişi sayısı:</strong> ${following.length}<br>
+      <strong>Seni geri takip etmeyen kişi sayısı:</strong> ${notFollowingBack.length}
+    `;
 
-resultList.innerHTML = notFollowingBack
-  .map(user => `<li>${user}</li>`)
-  .join("");
+    if (notFollowingBack.length === 0) {
+      resultList.innerHTML = "<li>Herkes seni geri takip ediyor.</li>";
+      return;
+    }
+
+    resultList.innerHTML = notFollowingBack
+      .map(user => `<li><a href="https://instagram.com/${user}" target="_blank">@${user}</a></li>`)
+      .join("");
+
+  } catch (error) {
+    countText.textContent = "Dosyalar okunurken hata oluştu.";
+    resultList.innerHTML = "";
+    console.error(error);
+  }
 });
